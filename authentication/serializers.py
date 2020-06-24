@@ -9,31 +9,53 @@ class RegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=128,
         min_length=8,
-        write_only=True
+        write_only=True,
     )
+
+    password2 = serializers.CharField(
+        max_length=128,
+        min_length=8,
+        write_only=True, label="Confirm password")
+
     token = serializers.CharField(max_length=255, read_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password', 'token']
+        fields = ['first_name', 'last_name', 'email',  'username', 'is_charity', 'password', 'password2', 'token']
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        first_name = validated_data["first_name"]
+        last_name = validated_data["last_name"]
+        username = validated_data["username"]
+        email = validated_data["email"]
+        is_charity = validated_data["is_charity"]
+        password = validated_data["password"]
+        password2 = validated_data["password2"]
+        if (email and User.objects.filter(email=email).exclude(username=username).exists()):
+            raise serializers.ValidationError(
+                {"email": "Email addresses must be unique."})
+        if password != password2:
+            raise serializers.ValidationError(
+                {"password": "The two passwords differ."})
+        user = User(first_name=first_name, last_name=last_name, username=username, is_charity=is_charity, email=email)
+        user.set_password(password)
+        user.save()
+        return user
 
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.CharField(max_length=255)
-    username = serializers.CharField(max_length=255, read_only=True)
+    username = serializers.CharField(max_length=255)
+    email = serializers.CharField(max_length=255, read_only=True)
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
 
     def validate(self, data):
-        email = data.get('email', None)
+        username = data.get('username', None)
         password = data.get('password', None)
-        if email is None:
+        if username is None:
             raise serializers.ValidationError(
-                'An email address is required to log in.'
+                'Username is required to log in.'
             )
 
         if password is None:
@@ -41,7 +63,7 @@ class LoginSerializer(serializers.Serializer):
                 'A password is required to log in.'
             )
 
-        user = authenticate(username=email, password=password)
+        user = authenticate(username=username, password=password)
 
         if user is None:
             raise serializers.ValidationError(

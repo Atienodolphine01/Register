@@ -10,15 +10,22 @@ from django.db import models
 from profapp.models import TimestampedModel
 
 class UserManager(BaseUserManager):
-    def create_user(self, username, email, password=None):
+    def create_user(self, username, first_name, last_name, email, password=None):
         """Create and return a `User` with an email, username and password."""
+
+        if first_name is None:
+            raise TypeError('Users must have a first_name.')
+
+        if last_name is None:
+            raise TypeError('Users must have a last_name.')
+
         if username is None:
             raise TypeError('Users must have a username.')
 
         if email is None:
             raise TypeError('Users must have an email address.')
 
-        user = self.model(username=username, email=self.normalize_email(email))
+        user = self.model(first_name=first_name, last_name=last_name, username=username, email=self.normalize_email(email))
         user.set_password(password)
         user.save()
 
@@ -40,17 +47,18 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
+    first_name = models.CharField(db_index=True,max_length=30)
+    last_name = models.CharField(db_index=True, max_length=30)
     username = models.CharField(db_index=True, max_length=255, unique=True)
     email = models.EmailField(db_index=True, unique=True)
     is_active = models.BooleanField(default=True)
     is_charity = models.BooleanField(default=True)
-    is_donor = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['first_name', 'last_name']
 
     objects = UserManager()
 
@@ -72,10 +80,23 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampedModel):
     def get_full_name(self):
         """
         This method is required by Django for things like handling emails.
-        Typically this would be the user's first and last name. Since we do
-        not store the user's real name, we return their username instead.
+        Typically this would be the user's first and last name. 
+        """
+        return self.first_name, self.last_name
+
+    def get_short_name(self):
+        """
+        This method is required by Django for things like handling emails.
+        Typically, this would be the user's first name. Since we do not store
+        the user's real name, we return their username instead.
         """
         return self.username
+
+    def get_is_charity(self):
+        """
+        This method returns a user's identity whether he/she is a donor or charity
+        """
+        return self.is_charity 
 
     def _generate_jwt_token(self):
         """

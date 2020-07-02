@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from profapp.serializers import ProfileSerializer
+# from profapp.serializers import ProfileSerializer
 from .models import User
 
 
@@ -50,6 +50,13 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=128, write_only=True)
     token = serializers.CharField(max_length=255, read_only=True)
 
+    class Meta:
+        model = User
+        fields = ( 'username', 'email', 'password', 'token')
+
+        read_only_fields = ('token')
+
+
     def validate(self, data):
         username = data.get('username', None)
         password = data.get('password', None)
@@ -90,16 +97,16 @@ class UserSerializer(serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
-    profile = ProfileSerializer(write_only=True)
+    # profile = ProfileSerializer(write_only=True)
     bio = serializers.CharField(source='profile.bio', read_only=True)
     image = serializers.CharField(source='profile.image', read_only=True)
 
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'token', 'profile', 'bio', 'image',)
+        fields = ('email', 'username', 'password', 'token', 'profile', 'bio', 'image', 'is_charity')
 
-        read_only_fields = ('token',)
+        read_only_fields = ('token', 'is_charity')
 
     def update(self, instance, validated_data):
         """Performs an update on a User."""
@@ -120,4 +127,3 @@ class UserSerializer(serializers.ModelSerializer):
         instance.profile.save()
 
         return instance
-

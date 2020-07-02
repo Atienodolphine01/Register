@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
-
+import cloudinary
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,13 +27,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+cloudinary.config(
+cloud_name = 'dy81pnpbz',  
+  api_key = '365141166323363',  
+  api_secret = 'llyaeqpZhXEg1IEeFXBtdp0ZCFU')  
 # Application definition
 
 INSTALLED_APPS = [
     'authentication.apps.AuthenticationConfig',
     'profapp.apps.ProfappConfig',
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,9 +47,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAdminUser'
+   ),
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -54,6 +68,12 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'registration.urls'
+
+
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:4200"
+]
+
 
 TEMPLATES = [
     {
